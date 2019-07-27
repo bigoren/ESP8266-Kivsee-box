@@ -1,7 +1,7 @@
 #include "secrets.h"
 
 // MQTT Broker Config
-#define MQTT_HOST IPAddress(10, 0, 0, 29)
+#define MQTT_HOST IPAddress(10, 0, 0, 200)
 #define MQTT_PORT 1883
 #define MQTT_USER ""
 #define MQTT_PASS ""
