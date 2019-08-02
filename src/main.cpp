@@ -58,7 +58,7 @@ void connectToMqtt() {
   Serial.println("[MQTT] Connecting to MQTT...");
   mqttClient.setClientId(WIFI_CLIENT_ID);
   mqttClient.setKeepAlive(5);
-  mqttClient.setWill(MQTT_TOPIC_CHIP,MQTT_TOPIC_CHIP_QoS,true,"DEAD",5);
+  mqttClient.setWill(MQTT_TOPIC_MONITOR,MQTT_TOPIC_MONITOR_QoS,true,"{\"alive\": false}");
   mqttClient.connect();
 }
 
@@ -110,6 +110,8 @@ void onMqttConnect(bool sessionPresent) {
   uint16_t packetIdSub = mqttClient.subscribe(MQTT_TOPIC_LEDS, MQTT_TOPIC_LEDS_QoS);
   Serial.print("Subscribing to ");
   Serial.println(MQTT_TOPIC_LEDS);
+  Serial.println("Sending alive message");
+  mqttClient.publish(MQTT_TOPIC_MONITOR, MQTT_TOPIC_MONITOR_QoS, true, "{\"alive\": true}");
 }
 
 void onMqttDisconnect(AsyncMqttClientDisconnectReason reason) {
@@ -196,7 +198,7 @@ void loop() {
   // Select one of the cards
   if ( ! mfrc522.PICC_ReadCardSerial())
     return;
-	 
+
   // Dump debug info about the card; PICC_HaltA() is automatically called
   // mfrc522.PICC_DumpToSerial(&(mfrc522.uid));
 
@@ -207,7 +209,7 @@ void loop() {
     Serial.print(readCard[i], HEX);
   }
   Serial.println();
-    
+
   // get PICC card type
   // Serial.print(F("PICC type: "));
   MFRC522::PICC_Type piccType = mfrc522.PICC_GetType(mfrc522.uid.sak);
@@ -241,21 +243,23 @@ void loop() {
 
   //char chip_data[22] = "Null for now";
   if (mqttClient.connected() && send_chip_data) {
-    StaticJsonDocument<400> chip_data;
-    JsonArray UID = chip_data.to<JsonArray>();
-    JsonArray block_data = chip_data.to<JsonArray>();
-    copyArray(readCard, UID);
-    copyArray(buffer, block_data);
+    StaticJsonDocument<128> chip_data;
+    //JsonArray UID = chip_data.to<JsonArray>();
+    //JsonArray block_data = chip_data.to<JsonArray>();
+    String UID = String(readCard[0],HEX) + String(readCard[1],HEX) + String(readCard[2],HEX) + String(readCard[3],HEX);
+    //copyArray(readCard, UID);
+    //copyArray(buffer, block_data);
     chip_data["UID"] = UID;
-    chip_data["block_data"] = block_data;
-    char chip_data_buffer[512];
+    chip_data["color"] = buffer[1] & 0x0F; // remove valid and win bits from color byte
+    chip_data["old_chip"] = (buffer[0] != 0xFF); // first byte not 0xFF means old chip
+    char chip_data_buffer[100];
     serializeJson(chip_data, chip_data_buffer);
     // send_chip_data = false;
-    mqttClient.publish(MQTT_TOPIC_CHIP, MQTT_TOPIC_CHIP_QoS, true, chip_data_buffer);
+    mqttClient.publish(MQTT_TOPIC_CHIP, MQTT_TOPIC_CHIP_QoS, false, chip_data_buffer);
     Serial.print("Sending chip data: ");
     serializeJson(chip_data, Serial);
   }
-  
+
   // Dump the sector data, good for debug
   // Serial.println(F("Current data in sector:"));
   // mfrc522.PICC_DumpMifareClassicSectorToSerial(&(mfrc522.uid), &key, sector);
