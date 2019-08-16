@@ -73,7 +73,7 @@ void connectToWifi() {
 
   delay(100);
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-  delay(5000);
+  delay(10000);
   if (WiFi.status() != WL_CONNECTED) {
     WiFi.disconnect(true);
     WiFi.mode(WIFI_STA);

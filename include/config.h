@@ -18,11 +18,11 @@
 #define MQTT_TOPIC_LEDS_QoS 0 // Keep 0 if you don't know what it is doing
 
 // WiFi Config
-#define WIFI_CLIENT_ID "RFID-220"
+#define WIFI_CLIENT_ID "box1"
 #define WIFI_RECONNECT_TIME 2 // in seconds
 
 // Wifi optional static ip (leave client ip empty to disable)
-#define WIFI_STATIC_IP    1 // set to 1 to enable static ip
+#define WIFI_STATIC_IP    0 // set to 1 to enable static ip
 #define WIFI_CLIENT_IP    IPAddress(10, 0, 0, 221)
 #define WIFI_GATEWAY_IP   IPAddress(10, 0, 0, 1)
 #define WIFI_SUBNET_IP    IPAddress(255, 255, 255, 0)
