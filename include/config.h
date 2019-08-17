@@ -2,6 +2,8 @@
 
 // MQTT Broker Config
 #define MQTT_HOST IPAddress(10, 0, 0, 200)
+// TEMP IP CHANGE, revert later!!
+// #define MQTT_HOST IPAddress(192, 168, 14, 22)
 #define MQTT_PORT 1883
 #define MQTT_USER ""
 #define MQTT_PASS ""
@@ -9,6 +11,7 @@
 
 // MQTT Client Config
 #define MQTT_CLIENT_ID "/sensors/rfid"
+// change box number for each box!
 #define MQTT_UNIQUE_ID "/box1"
 #define MQTT_TOPIC_MONITOR MQTT_CLIENT_ID MQTT_UNIQUE_ID "/monitor"
 #define MQTT_TOPIC_MONITOR_QoS 0 // Keep 0 if you don't know what it is doing
@@ -18,6 +21,7 @@
 #define MQTT_TOPIC_LEDS_QoS 0 // Keep 0 if you don't know what it is doing
 
 // WiFi Config
+// change box number for each box!
 #define WIFI_CLIENT_ID "box1"
 #define WIFI_RECONNECT_TIME 2 // in seconds
 

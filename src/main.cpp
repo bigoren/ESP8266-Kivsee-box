@@ -24,6 +24,7 @@ Ticker wifiReconnectTimer;
 #define RINGS     4
 #define NUM_LEDS (RING_LEDS*RINGS)
 #define DATA_PIN 9
+#define LED_GPIO D0
 
 // Define the array of leds
 CRGB leds[NUM_LEDS];
@@ -165,6 +166,8 @@ void setup() {
   FastLED.addLeds<NEOPIXEL, DATA_PIN>(leds, NUM_LEDS);
   FastLED.setBrightness(64);
 
+  pinMode(LED_GPIO, OUTPUT);
+
   wifiConnectHandler = WiFi.onStationModeGotIP(onWifiConnect);
   wifiDisconnectHandler = WiFi.onStationModeDisconnected(onWifiDisconnect);
 
@@ -178,6 +181,8 @@ void setup() {
   }
 
   connectToWifi();
+  // Turn ON board led after wifi connect
+  digitalWrite(LED_GPIO,HIGH);
 }
 
 /**
