@@ -27,8 +27,8 @@ Ticker wifiReconnectTimer;
 
 // Define the array of leds
 CRGB leds[NUM_LEDS];
-byte state = 0x2;
-byte master_state = 0x1; //Off=0, Pattern=1, Color=2
+byte color = 0x2;
+byte master_state = 0x0; //Off=0, Pattern=1, Color=2
 #include "LED_control.h"
 
 MFRC522 mfrc522(SS_PIN, RST_PIN);  // Create MFRC522 instance
@@ -39,10 +39,10 @@ MFRC522::MIFARE_Key key;
 byte sector         = 1;
 byte blockAddr      = 4;
 byte dataBlock[]    = {
-        0x01, 0x02, 0x03, 0x04, //  1,  2,   3,  4,
-        0x05, 0x06, 0x07, 0x08, //  5,  6,   7,  8,
-        0x09, 0x0a, 0xff, 0x0b, //  9, 10, 255, 11,
-        0x0c, 0x0d, 0x0e, 0x0f  // 12, 13, 14, 15
+        0xFF, 0x00, 0xFF, 0xFF, //  byte 1 for color encoding
+        0xFF, 0xFF, 0xFF, 0xFF, 
+        0xFF, 0xFF, 0xFF, 0xFF, 
+        0xFF, 0xFF, 0xFF, 0x02  // byte 15 for event track bit[0] = burnerot2018, bit[1] = contra2019
     };
 byte trailerBlock   = 7;
 byte buffer[18];
@@ -52,6 +52,8 @@ byte PICC_version;
 unsigned int readCard[4];
 
 bool send_chip_data = true;
+bool is_old_chip = false;
+byte chip_color = 0x0;
 
 
 void connectToMqtt() {
@@ -137,10 +139,10 @@ void onMqttMessage(char* topic, char* payload, AsyncMqttClientMessageProperties 
 
     DynamicJsonDocument doc(50);
     deserializeJson(doc, payload);
-    state = doc["state"];
+    color = doc["color"];
     master_state = doc["master_state"];
-    Serial.print("state: ");
-    Serial.println(state);
+    Serial.print("color: ");
+    Serial.println(color);
     Serial.print("master_state: ");
     Serial.println(master_state);
     FastLED.clear();
@@ -182,7 +184,7 @@ void setup() {
  * Main loop.
  */
 void loop() {
-  set_leds(state, master_state);
+  set_leds(color, master_state);
   FastLED.show();
   FastLED.delay(20);
 
@@ -241,20 +243,39 @@ void loop() {
     return;
   }
 
-  //char chip_data[22] = "Null for now";
+  // consider not sending the chip data if its the same chip? prevent system load and errors?
+  String UID = String(readCard[0],HEX) + String(readCard[1],HEX) + String(readCard[2],HEX) + String(readCard[3],HEX);
+
+  // check if its an old chip and encode it with new format
+  is_old_chip = (buffer[0] != 0xFF);  // first byte not 0xFF means old chip
+  if (is_old_chip) {
+    dataBlock[1] = buffer[1] & 0x0F; // remove valid and win bits from color byte
+    dataBlock[15] = 0x03;   // last byte for event track, bit[0] = burnerot2018, bit[1] = contra2019
+    write_success = write_and_verify(blockAddr, dataBlock, buffer, size);
+    if (write_success) {
+      Serial.println(F("write worked, old chip converted to new format"));
+    }
+    else {
+      Serial.println(F("write failed! aborting chip handling"));
+      // Halt PICC
+      mfrc522.PICC_HaltA();
+      // Stop encryption on PCD
+      mfrc522.PCD_StopCrypto1();
+      return;
+    }
+  }
+
+  // after changing old chips to new format testing for old chips is done on byte 15 bit[0]
+  is_old_chip = (buffer[15] & 0x01);
+  chip_color = buffer[1]; // color is at byte 1
+  
   if (mqttClient.connected() && send_chip_data) {
     StaticJsonDocument<128> chip_data;
-    //JsonArray UID = chip_data.to<JsonArray>();
-    //JsonArray block_data = chip_data.to<JsonArray>();
-    String UID = String(readCard[0],HEX) + String(readCard[1],HEX) + String(readCard[2],HEX) + String(readCard[3],HEX);
-    //copyArray(readCard, UID);
-    //copyArray(buffer, block_data);
     chip_data["UID"] = UID;
-    chip_data["color"] = buffer[1] & 0x0F; // remove valid and win bits from color byte
-    chip_data["old_chip"] = (buffer[0] != 0xFF); // first byte not 0xFF means old chip
+    chip_data["color"] = chip_color; 
+    chip_data["old_chip"] = is_old_chip;
     char chip_data_buffer[100];
     serializeJson(chip_data, chip_data_buffer);
-    // send_chip_data = false;
     mqttClient.publish(MQTT_TOPIC_CHIP, MQTT_TOPIC_CHIP_QoS, false, chip_data_buffer);
     Serial.print("Sending chip data: ");
     serializeJson(chip_data, Serial);
