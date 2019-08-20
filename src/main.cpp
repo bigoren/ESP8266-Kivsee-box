@@ -40,10 +40,10 @@ MFRC522::MIFARE_Key key;
 byte sector         = 1;
 byte blockAddr      = 4;
 byte dataBlock[]    = {
-        0xFF, 0x00, 0xFF, 0xFF, //  byte 1 for color encoding
-        0xFF, 0xFF, 0xFF, 0xFF, 
-        0xFF, 0xFF, 0xFF, 0xFF, 
-        0xFF, 0xFF, 0xFF, 0x02  // byte 15 for event track bit[0] = burnerot2018, bit[1] = contra2019
+        0x00, 0x00, 0x00, 0x00, //  byte 1 for color encoding
+        0x00, 0x00, 0x00, 0x00, 
+        0x00, 0x00, 0x00, 0x00, 
+        0x00, 0x00, 0x00, 0x02  // byte 15 for event track bit[0] = burnerot2018, bit[1] = contra2019
     };
 byte trailerBlock   = 7;
 byte buffer[18];
@@ -252,7 +252,7 @@ void loop() {
   String UID = String(readCard[0],HEX) + String(readCard[1],HEX) + String(readCard[2],HEX) + String(readCard[3],HEX);
 
   // check if its an old chip and encode it with new format
-  is_old_chip = (buffer[0] != 0xFF);  // first byte not 0xFF means old chip
+  is_old_chip = (buffer[0] != 0x00);  // first byte not 0x00 means old chip
   if (is_old_chip) {
     dataBlock[1] = buffer[1] & 0x0F; // remove valid and win bits from color byte
     dataBlock[15] = 0x03;   // last byte for event track, bit[0] = burnerot2018, bit[1] = contra2019
