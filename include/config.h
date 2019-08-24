@@ -2,8 +2,6 @@
 
 // MQTT Broker Config
 #define MQTT_HOST IPAddress(10, 0, 0, 200)
-// TEMP IP CHANGE, revert later!!
-// #define MQTT_HOST IPAddress(192, 168, 14, 22)
 #define MQTT_PORT 1883
 #define MQTT_USER ""
 #define MQTT_PASS ""
