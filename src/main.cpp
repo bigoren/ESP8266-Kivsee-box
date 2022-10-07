@@ -24,6 +24,7 @@ Ticker wifiReconnectTimer;
 #define RINGS     4
 #define NUM_LEDS (RING_LEDS*RINGS)
 #define DATA_PIN 9
+#define LED_GPIO D0
 
 // Define the array of leds
 CRGB leds[NUM_LEDS];
@@ -39,10 +40,10 @@ MFRC522::MIFARE_Key key;
 byte sector         = 1;
 byte blockAddr      = 4;
 byte dataBlock[]    = {
-        0xFF, 0x00, 0xFF, 0xFF, //  byte 1 for color encoding
-        0xFF, 0xFF, 0xFF, 0xFF, 
-        0xFF, 0xFF, 0xFF, 0xFF, 
-        0xFF, 0xFF, 0xFF, 0x04  // byte 15 for event track bit[0] = burnerot2018, bit[1] = contra2019, bit[2] = Midburn2022
+        0x00, 0x00, 0x00, 0x00, //  byte 1 for color encoding
+        0x00, 0x00, 0x00, 0x00, 
+        0x00, 0x00, 0x00, 0x00, 
+        0x00, 0x00, 0x00, 0x04  // byte 15 for event track bit[0] = burnerot2018, bit[1] = contra2019, bit[2] = Midburn2022
     };
 byte trailerBlock   = 7;
 byte buffer[18];
@@ -165,6 +166,8 @@ void setup() {
   FastLED.addLeds<NEOPIXEL, DATA_PIN>(leds, NUM_LEDS);
   FastLED.setBrightness(64);
 
+  pinMode(LED_GPIO, OUTPUT);
+
   wifiConnectHandler = WiFi.onStationModeGotIP(onWifiConnect);
   wifiDisconnectHandler = WiFi.onStationModeDisconnected(onWifiDisconnect);
 
@@ -178,6 +181,8 @@ void setup() {
   }
 
   connectToWifi();
+  // Turn ON board led after wifi connect
+  digitalWrite(LED_GPIO,HIGH);
 }
 
 /**
@@ -247,7 +252,7 @@ void loop() {
   String UID = String(readCard[0],HEX) + String(readCard[1],HEX) + String(readCard[2],HEX) + String(readCard[3],HEX);
 
   // check if its an old chip and encode it with new format
-  is_old_chip = (buffer[0] != 0xFF);  // first byte not 0xFF means old chip
+  is_old_chip = (buffer[0] != 0x00);  // first byte not 0x00 means old chip
   if (is_old_chip) {
     dataBlock[1] = buffer[1] & 0x0F; // remove valid and win bits from color byte
     dataBlock[15] = 0x04;   // last byte for event track, bit[0] = burnerot2018, bit[1] = contra2019, bit[2] = Midburn2022
