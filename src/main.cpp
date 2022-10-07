@@ -42,7 +42,7 @@ byte dataBlock[]    = {
         0xFF, 0x00, 0xFF, 0xFF, //  byte 1 for color encoding
         0xFF, 0xFF, 0xFF, 0xFF, 
         0xFF, 0xFF, 0xFF, 0xFF, 
-        0xFF, 0xFF, 0xFF, 0x02  // byte 15 for event track bit[0] = burnerot2018, bit[1] = contra2019
+        0xFF, 0xFF, 0xFF, 0x04  // byte 15 for event track bit[0] = burnerot2018, bit[1] = contra2019, bit[2] = Midburn2022
     };
 byte trailerBlock   = 7;
 byte buffer[18];
@@ -250,7 +250,7 @@ void loop() {
   is_old_chip = (buffer[0] != 0xFF);  // first byte not 0xFF means old chip
   if (is_old_chip) {
     dataBlock[1] = buffer[1] & 0x0F; // remove valid and win bits from color byte
-    dataBlock[15] = 0x03;   // last byte for event track, bit[0] = burnerot2018, bit[1] = contra2019
+    dataBlock[15] = 0x04;   // last byte for event track, bit[0] = burnerot2018, bit[1] = contra2019, bit[2] = Midburn2022
     write_success = write_and_verify(blockAddr, dataBlock, buffer, size);
     if (write_success) {
       Serial.println(F("write worked, old chip converted to new format"));
